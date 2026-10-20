@@ -1,26 +1,191 @@
 @import "tailwindcss";
 
+/* =====================================================================
+   Living Faith Church International — Laderin-Hilltop
+   Brand palette derived from the official church logo asset
+   (public/brand/lfc-logo.png): signature red, charcoal black, warm gold
+   accent and silver neutrals.
+   ===================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f7f8;
+  --foreground: #1a1a1c;
+
+  --card: #ffffff;
+  --card-foreground: #1a1a1c;
+
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1c;
+
+  /* Signature red drawn from the logo. */
+  --primary: #c81e1e;
+  --primary-foreground: #ffffff;
+
+  /* Charcoal black drawn from the logo. */
+  --secondary: #ececed;
+  --secondary-foreground: #1a1a1c;
+
+  --muted: #f1f1f3;
+  --muted-foreground: #55555e;
+
+  /* Warm gold accent used sparingly for highlights. */
+  --accent: #b8860b;
+  --accent-foreground: #1a1204;
+
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+
+  --success: #0f7b4f;
+  --success-foreground: #ffffff;
+
+  --warning: #b54708;
+  --warning-foreground: #ffffff;
+
+  --border: #dcdce1;
+  --input: #d5d5db;
+  --ring: #c81e1e;
+
+  --radius: 0.75rem;
+
+  /* Solid charcoal used for headers and the dashboard sidebar. */
+  --ink: #16161a;
+  --ink-foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Large, obvious focus ring for keyboard and low-vision users. */
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  h1, h2, h3, h4 {
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .print-only {
+    display: none;
+  }
+}
+
+/* =====================================================================
+   Print styles — used by the member table and member card printing.
+   ===================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  header.app-header {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  .print-area {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+
+  .print-table {
+    font-size: 9pt;
+  }
+
+  .print-table thead {
+    display: table-header-group;
+  }
+
+  .print-table tr {
+    break-inside: avoid;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

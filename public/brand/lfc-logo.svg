@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Living Faith Church International">
+  <rect width="64" height="64" rx="12" fill="#16161a"/>
+  <path d="M32 12c-6.2 0-11.2 5-11.2 11.2 0 2 .5 3.9 1.5 5.6L16 42.4A3 3 0 0 0 18.8 47h26.4a3 3 0 0 0 2.8-4.6l-6.3-13.6c1-1.7 1.5-3.6 1.5-5.6C43.2 17 38.2 12 32 12z" fill="#fe0000"/>
+  <path d="M32 16.5a6.7 6.7 0 0 0-6.7 6.7c0 1.9.8 3.6 2 4.8h9.4a6.6 6.6 0 0 0 2-4.8A6.7 6.7 0 0 0 32 16.5z" fill="#fdfdfd"/>
+  <path d="M23 47l-4.6 6.4a1 1 0 0 0 .8 1.6h25.6a1 1 0 0 0 .8-1.6L41 47z" fill="#b2b2b2"/>
+  <path d="M25.5 31.5h13v3h-13z" fill="#fdfdfd"/>
+</svg>
