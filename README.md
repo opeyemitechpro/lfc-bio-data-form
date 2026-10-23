@@ -351,7 +351,7 @@ reassigned through the application.
 
 ```bash
 # Windows PowerShell
-$env:BOOTSTRAP_ADMIN_EMAIL = "superadmin@yourchurch.org"
+$env:BOOTSTRAP_ADMIN_EMAIL = "superadmin@lfcladerin.org"
 $env:BOOTSTRAP_ADMIN_PASSWORD = "A-Strong-Temporary-Password-2026"
 $env:BOOTSTRAP_ADMIN_NAME = "Superadmin"
 $env:BOOTSTRAP_ADMIN_ROLES = "Resident Pastor"
@@ -360,7 +360,7 @@ npm run bootstrap:admin
 
 ```bash
 # macOS / Linux
-BOOTSTRAP_ADMIN_EMAIL="superadmin@yourchurch.org" \
+BOOTSTRAP_ADMIN_EMAIL="superadmin@lfcladerin.org" \
 BOOTSTRAP_ADMIN_PASSWORD="A-Strong-Temporary-Password-2026" \
 BOOTSTRAP_ADMIN_NAME="Superadmin" \
 BOOTSTRAP_ADMIN_ROLES="Resident Pastor" \
