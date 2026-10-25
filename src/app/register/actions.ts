@@ -37,7 +37,7 @@ async function requestContext(): Promise<{ ip: string | null; userAgent: string 
  * Rate limited so the signing endpoint cannot be abused.
  */
 export async function requestUploadSignature(): Promise<
-  ActionResult<{ signature: string; timestamp: number; folder: string; publicId: string; apiKey: string; maxBytes: number }>
+  ActionResult<{ signature: string; timestamp: number; folder: string; publicId: string; apiKey: string; maxBytes: number; allowedFormats: string; transformation: string }>
 > {
   const { ip } = await requestContext();
   const settings = await getFormSettings();
@@ -60,7 +60,9 @@ export async function requestUploadSignature(): Promise<
         folder: params.folder,
         publicId: params.public_id,
         apiKey: params.api_key,
-        maxBytes: settings.maxUploadBytes,
+        maxBytes: params.max_file_size,
+        allowedFormats: params.allowed_formats,
+        transformation: params.transformation,
       },
     };
   } catch (error) {

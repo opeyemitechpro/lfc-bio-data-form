@@ -79,7 +79,10 @@ export function PhotoCapture({
         return;
       }
 
-      const { signature: sig, timestamp, folder, publicId, apiKey } = signature.data;
+      const {
+        signature: sig, timestamp, folder, publicId, apiKey,
+        maxBytes: signedMaxBytes, allowedFormats, transformation,
+      } = signature.data;
 
       const body = new FormData();
       body.append("file", file);
@@ -87,6 +90,9 @@ export function PhotoCapture({
       body.append("timestamp", String(timestamp));
       body.append("folder", folder);
       body.append("public_id", publicId);
+      body.append("allowed_formats", allowedFormats);
+      body.append("max_file_size", String(signedMaxBytes));
+      body.append("transformation", transformation);
       body.append("signature", sig);
 
       const response = await fetch(
