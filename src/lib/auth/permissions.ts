@@ -47,18 +47,29 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   // Suspended or deactivated accounts lose access immediately.
   if (profile.status !== "active" || profile.is_active !== true) return null;
 
-  const { data: principal } = await admin
-    .from("app_principals")
-    .select("principal_type")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [principalResult, rolesResult, overridesResult, scopesResult] =
+    await Promise.all([
+      admin
+        .from("app_principals")
+        .select("principal_type")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      admin
+        .from("user_roles")
+        .select("role_id, roles ( id, name )")
+        .eq("user_id", user.id),
+      admin
+        .from("user_permission_overrides")
+        .select("permission_key, effect")
+        .eq("user_id", user.id),
+      admin
+        .from("user_service_unit_scopes")
+        .select("service_unit_id")
+        .eq("user_id", user.id),
+    ]);
 
-  const isSuperadmin = principal?.principal_type === "superadmin";
-
-  const { data: userRoles } = await admin
-    .from("user_roles")
-    .select("role_id, roles ( id, name )")
-    .eq("user_id", user.id);
+  const isSuperadmin = principalResult.data?.principal_type === "superadmin";
+  const userRoles = rolesResult.data;
 
   const roleIds: string[] = [];
   const roleNames: string[] = [];
@@ -79,21 +90,12 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
     for (const row of rolePerms ?? []) grantedPermissions.add(row.permission_key);
   }
 
-  const { data: overrides } = await admin
-    .from("user_permission_overrides")
-    .select("permission_key, effect")
-    .eq("user_id", user.id);
-
-  for (const row of overrides ?? []) {
+  for (const row of overridesResult.data ?? []) {
     if (row.effect === "deny") grantedPermissions.delete(row.permission_key);
     else grantedPermissions.add(row.permission_key);
   }
 
-  const { data: scopes } = await admin
-    .from("user_service_unit_scopes")
-    .select("service_unit_id")
-    .eq("user_id", user.id);
-
+  const scopes = scopesResult.data;
   const serviceUnitScopeIds = scopes && scopes.length > 0 ? scopes.map((s) => s.service_unit_id) : null;
 
   return {

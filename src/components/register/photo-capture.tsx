@@ -81,7 +81,7 @@ export function PhotoCapture({
 
       const {
         signature: sig, timestamp, folder, publicId, apiKey,
-        maxBytes: signedMaxBytes, allowedFormats, transformation,
+        allowedFormats, transformation,
       } = signature.data;
 
       const body = new FormData();
@@ -91,7 +91,6 @@ export function PhotoCapture({
       body.append("folder", folder);
       body.append("public_id", publicId);
       body.append("allowed_formats", allowedFormats);
-      body.append("max_file_size", String(signedMaxBytes));
       body.append("transformation", transformation);
       body.append("signature", sig);
 
@@ -100,17 +99,18 @@ export function PhotoCapture({
         { method: "POST", body }
       );
 
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
       const result = (await response.json()) as {
         public_id: string;
         format: string;
         width: number;
         height: number;
         bytes: number;
+        error?: { message?: string };
       };
+
+      if (!response.ok) {
+        throw new Error(result.error?.message ?? `Cloudinary rejected the upload (${response.status}).`);
+      }
 
       onChange({
         publicId: result.public_id,
@@ -120,9 +120,11 @@ export function PhotoCapture({
         bytes: result.bytes,
       });
       toast.success("Photograph uploaded.");
-    } catch {
+    } catch (error) {
       toast.error(
-        "The photograph could not be uploaded. Please check your connection and try again."
+        error instanceof Error
+          ? error.message
+          : "The photograph could not be uploaded. Please check your connection and try again."
       );
     } finally {
       setUploading(false);

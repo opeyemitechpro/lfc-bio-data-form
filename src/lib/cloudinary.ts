@@ -49,9 +49,9 @@ export interface UploadedImage {
 /**
  * Generates a signed upload ticket.
  *
- * The signature covers the timestamp, folder, public id, format whitelist,
- * size limit and transformation, so the client cannot widen the accepted
- * formats or upload a file larger than the configured maximum.
+ * The signature covers the timestamp, folder, public id, format whitelist
+ * and transformation. The browser enforces the configured size limit before
+ * upload; Cloudinary does not accept `max_file_size` as an upload parameter.
  */
 export function createUploadSignature(options?: {
   maxBytes?: number;
@@ -72,14 +72,13 @@ export function createUploadSignature(options?: {
     .slice(0, 10);
   const publicId = `lfc-${Date.now().toString(36)}-${hashPart}-${randomPart.slice(0, 8)}`;
 
-  const transformation = "c-limit,w_2000,h_2000,q_auto:good,f_auto";
+  const transformation = "c-limit,w_2000,h_2000,q_auto:good";
 
   const paramsToSign = {
     timestamp,
     folder,
     public_id: publicId,
     allowed_formats: CLOUDINARY_IMAGE_FORMATS.join(","),
-    max_file_size: maxBytes,
     transformation,
   };
   const signature = cloudinary.utils.api_sign_request(
@@ -89,6 +88,7 @@ export function createUploadSignature(options?: {
 
   return {
     ...paramsToSign,
+    max_file_size: maxBytes,
     signature,
     api_key: env.server.cloudinaryApiKey(),
   };

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { registrationSchema } from "@/lib/validation/registration";
+import {
+  adminMemberSchema,
+  registrationSchema,
+} from "@/lib/validation/registration";
 
 const validPayload = {
   titleId: "11111111-1111-4111-8111-111111111111",
@@ -195,5 +198,17 @@ describe("registrationSchema", () => {
     expect(registrationSchema.safeParse({ ...validPayload, submissionId: "x" }).success).toBe(
       false
     );
+  });
+});
+
+describe("adminMemberSchema", () => {
+  it("accepts an administrator payload without public-only fields", () => {
+    const adminPayload = Object.fromEntries(
+      Object.entries(validPayload).filter(
+        ([key]) => key !== "consentAccepted" && key !== "submissionId"
+      )
+    );
+
+    expect(adminMemberSchema.safeParse(adminPayload).success).toBe(true);
   });
 });

@@ -186,12 +186,8 @@ export type RegistrationFormValues = z.infer<typeof registrationSchema>;
  * notice version applied at the time of creation.
  */
 export const adminMemberSchema = z
-  .object(
-    registrationFields as Omit<
-      typeof registrationFields,
-      "consentAccepted" | "submissionId"
-    >
-  )
+  .object(registrationFields)
+  .omit({ consentAccepted: true, submissionId: true })
   .superRefine(validateRegistrationFields);
 
 export type AdminMemberFormValues = z.infer<typeof adminMemberSchema>;

@@ -36,14 +36,13 @@ interface MemberTableProps {
   canEdit: boolean;
   canDelete: boolean;
   canPrint: boolean;
+  showOnDesktop?: boolean;
   onDelete?: (member: MemberListItem) => void;
 }
 
 /**
- * The desktop member table.
- *
- * On small screens the page switches to the card layout instead of
- * forcing a horizontally scrolling table.
+ * The desktop member table. On small screens, table mode uses the card
+ * layout instead of forcing a horizontally scrolling table.
  */
 export function MemberTable({
   members,
@@ -158,7 +157,7 @@ export function MemberTable({
   );
 }
 
-/** The mobile card layout used below the `md` breakpoint. */
+/** Card layout used on mobile in table mode and at every size in card mode. */
 export function MemberCardList({
   members,
   canViewPhotos,
@@ -166,9 +165,10 @@ export function MemberCardList({
   canDelete,
   canPrint,
   onDelete,
+  showOnDesktop = false,
 }: MemberTableProps) {
   return (
-    <ul className="space-y-3 md:hidden">
+    <ul className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3${showOnDesktop ? "" : " md:hidden"}`}>
       {members.map((member) => (
         <li
           key={member.id}

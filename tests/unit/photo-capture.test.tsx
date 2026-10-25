@@ -64,7 +64,6 @@ it.each([
     folder: ticket.folder,
     public_id: ticket.public_id,
     allowed_formats: ticket.allowed_formats,
-    max_file_size: String(ticket.max_file_size),
     transformation: ticket.transformation,
   });
   expect(cloudinary.utils.api_sign_request(signedFields, process.env.CLOUDINARY_API_SECRET!))

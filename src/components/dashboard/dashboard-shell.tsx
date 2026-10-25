@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { ChurchLogo } from "@/components/brand/church-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/lib/auth/permission-keys";
@@ -126,6 +127,7 @@ export function DashboardShell({
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle inverse />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold leading-tight text-white">
                 {user.name ?? user.email}

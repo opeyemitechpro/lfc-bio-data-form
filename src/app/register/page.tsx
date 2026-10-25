@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ChurchLogo } from "@/components/brand/church-logo";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { RegistrationForm } from "@/components/register/registration-form";
 import { getPublicCustomFields } from "@/lib/members/custom-fields";
 import { listServiceUnits, listTitles } from "@/lib/lookups";
@@ -32,12 +33,15 @@ export default async function RegisterPage() {
       <header className="app-header border-b border-border bg-ink text-ink-foreground">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <ChurchLogo withWordmark inverted priority />
-          <Link
-            href="/login"
-            className="rounded-lg border border-white/25 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
-          >
-            Staff sign in
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle inverse />
+            <Link
+              href="/login"
+              className="rounded-lg border border-white/25 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
+            >
+              Staff sign in
+            </Link>
+          </div>
         </div>
       </header>
 

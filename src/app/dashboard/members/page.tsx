@@ -162,15 +162,25 @@ export default async function MembersPage({ searchParams }: PageProps) {
               canEdit={canEdit}
               canDelete={canDelete}
               canPrint={canPrint || canPrintBulk}
+              showOnDesktop
             />
           ) : (
-            <MemberTable
-              members={result.items}
-              canViewPhotos={canViewPhotos}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              canPrint={canPrint || canPrintBulk}
-            />
+            <>
+              <MemberTable
+                members={result.items}
+                canViewPhotos={canViewPhotos}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                canPrint={canPrint || canPrintBulk}
+              />
+              <MemberCardList
+                members={result.items}
+                canViewPhotos={canViewPhotos}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                canPrint={canPrint || canPrintBulk}
+              />
+            </>
           )}
 
           <Pagination

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -33,6 +34,7 @@ export const viewport: Viewport = {
   themeColor: "#123a8f",
   width: "device-width",
   initialScale: 1,
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({
@@ -41,15 +43,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster
-          position="top-center"
-          richColors
-          closeButton
-          toastOptions={{ duration: 6000 }}
-        />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster
+            position="top-center"
+            richColors
+            closeButton
+            toastOptions={{ duration: 6000 }}
+          />
+        </ThemeProvider>
       </body>
     </html>
   );
