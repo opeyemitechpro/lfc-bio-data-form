@@ -11,7 +11,7 @@ import {
   AuthorizationError,
 } from "@/lib/auth/permissions";
 import { createAdminSupabaseClient } from "@/lib/supabase/clients";
-import { destroyImage } from "@/lib/cloudinary";
+import { destroyImage } from "@/lib/image-storage";
 import { getCustomFields } from "@/lib/members/custom-fields";
 import { validateCustomValues } from "@/lib/custom-fields";
 import { registerMember } from "@/lib/members/register";

@@ -81,6 +81,25 @@ describe("validateImageBytes", () => {
 });
 
 describe("readImageDimensions", () => {
+  it.each(["VP8X", "VP8 ", "VP8L"])("reads %s WebP dimensions", (chunk) => {
+    const buffer = Buffer.alloc(chunk === "VP8L" ? 26 : 30);
+    buffer.write("RIFF", 0);
+    buffer.write("WEBP", 8);
+    buffer.write(chunk, 12);
+    if (chunk === "VP8X") {
+      buffer.writeUIntLE(319, 24, 3);
+      buffer.writeUIntLE(399, 27, 3);
+    } else if (chunk === "VP8 ") {
+      Buffer.from("9d012a", "hex").copy(buffer, 23);
+      buffer.writeUInt16LE(320, 26);
+      buffer.writeUInt16LE(400, 28);
+    } else {
+      buffer[20] = 0x2f;
+      buffer.writeUInt32LE(319 | (399 << 14), 21);
+    }
+    expect(readImageDimensions(buffer)).toEqual({ width: 320, height: 400 });
+  });
+
   it("reads PNG dimensions", () => {
     expect(readImageDimensions(makePng(320, 400))).toEqual({
       width: 320,

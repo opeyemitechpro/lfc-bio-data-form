@@ -38,6 +38,14 @@ export const publicEnv = {
 
 /** Server-only configuration. Never import this from a client component. */
 export const serverEnv = {
+  imageStorageProvider: (): "cloudinary" | "supabase" => {
+    const provider = optional("IMAGE_STORAGE_PROVIDER") ?? "cloudinary";
+    if (provider !== "cloudinary" && provider !== "supabase") {
+      throw new Error("IMAGE_STORAGE_PROVIDER must be cloudinary or supabase.");
+    }
+    return provider;
+  },
+  supabaseStorageBucket: () => optional("SUPABASE_STORAGE_BUCKET") ?? "member-photos",
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY"),
   cloudinaryApiKey: () => required("CLOUDINARY_API_KEY"),
   cloudinaryApiSecret: () => required("CLOUDINARY_API_SECRET"),

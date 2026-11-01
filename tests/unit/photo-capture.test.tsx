@@ -6,9 +6,9 @@ import { v2 as cloudinary } from "cloudinary";
 
 import { PhotoCapture } from "@/components/register/photo-capture";
 import { createUploadSignature } from "@/lib/cloudinary";
-import { requestUploadSignature } from "@/app/register/actions";
+import { completeSupabasePhotoUpload, requestUploadSignature } from "@/app/register/actions";
 
-vi.mock("@/app/register/actions", () => ({ requestUploadSignature: vi.fn() }));
+vi.mock("@/app/register/actions", () => ({ requestUploadSignature: vi.fn(), completeSupabasePhotoUpload: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 afterEach(() => {
@@ -68,4 +68,24 @@ it.each([
   });
   expect(cloudinary.utils.api_sign_request(signedFields, process.env.CLOUDINARY_API_SECRET!))
     .toBe(body.get("signature"));
+});
+
+it("uploads directly to Supabase and accepts only verified metadata", async () => {
+  vi.mocked(requestUploadSignature).mockResolvedValue({ ok: true, data: {
+    provider: "supabase", signedUrl: "https://test.supabase.co/upload?token=signed", verificationToken: "verification-ticket", maxBytes: 500000,
+  } });
+  const photo = { publicId: "supabase:member-photos/members/photo.png", format: "png", width: 320, height: 400, bytes: 24 };
+  vi.mocked(completeSupabasePhotoUpload).mockResolvedValue({ ok: true, data: photo });
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+  vi.stubGlobal("fetch", fetchMock);
+  const onChange = vi.fn();
+  render(<PhotoCapture value={null} onChange={onChange} maxBytes={500000} />);
+  const file = new File(["image"], "photo.png", { type: "image/png" });
+  fireEvent.change(screen.getByLabelText("Choose a passport photograph from this device"), { target: { files: [file] } });
+  await waitFor(() => expect(onChange).toHaveBeenCalledWith(photo));
+  expect(requestUploadSignature).toHaveBeenCalledWith("png");
+  expect(fetchMock).toHaveBeenCalledWith("https://test.supabase.co/upload?token=signed", {
+    method: "PUT", headers: { "Content-Type": "image/png", "x-upsert": "false" }, body: file,
+  });
+  expect(completeSupabasePhotoUpload).toHaveBeenCalledWith("verification-ticket");
 });

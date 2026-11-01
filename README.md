@@ -59,7 +59,7 @@ cards.
 | UI components | shadcn/ui patterns on Radix UI | Accessible primitives |
 | Forms | React Hook Form + Zod | Shared client/server schemas |
 | Icons | Lucide React | |
-| Image storage | Cloudinary Free | Signed, direct-to-provider uploads |
+| Image storage | Cloudinary Free or Supabase Storage Free (1 GB) | Environment-selected, signed direct uploads |
 | CSV | Native implementation with injection sanitisation | |
 | Excel | ExcelJS | |
 | PDF | PDFKit | |
@@ -77,7 +77,7 @@ graph TD
     Staff[Church administrator] -->|Sign in| Public
     Public -->|Server actions / API routes| Server[Next.js Server Runtime]
     Server -->|Service role, RLS bypassed| DB[(Supabase PostgreSQL)]
-    Server -->|Signed upload ticket| Cloud[Cloudinary]
+    Server -->|Signed upload ticket| Cloud[Cloudinary or Supabase Storage]
     Visitor -->|Direct signed upload| Cloud
     Server -->|Audit events| DB
     Public -->|Read-only reference data| DB
@@ -90,7 +90,7 @@ graph TD
 | All member data access goes through server-side code using the service-role key | RLS policies alone cannot express the church's role and scope model; authorization is enforced in the application, with RLS as defence in depth |
 | The public form writes through a single transactional Postgres function (`create_member_registration`) | A member row and its related rows either all exist or none do — no partial registrations |
 | The superadmin lives in a separate `app_principals` table | It is not a role that role-management code can read, write or assign, so it cannot be revoked or downgraded through the ordinary UI |
-| Photographs upload directly from the browser to Cloudinary | The API secret never reaches the browser; the server issues a short-lived signed ticket that pins the allowed formats and maximum size |
+| Photographs upload directly to the selected storage provider | Server-issued signed tickets keep secrets off the browser; Supabase uploads are verified for image bytes, dimensions and size |
 | Service units, titles and custom fields are database-driven | The church can change the form without a redeployment |
 | Member records are soft-deleted | Recoverable in line with the retention policy |
 
@@ -125,13 +125,13 @@ Full schema documentation is in [`docs/DATABASE.md`](docs/DATABASE.md).
 
 | Service | Plan | Purpose |
 | --- | --- | --- |
-| [Supabase](https://supabase.com) | Free | PostgreSQL database, authentication, Row Level Security |
-| [Cloudinary](https://cloudinary.com) | Free | Passport photograph storage and delivery |
+| [Supabase](https://supabase.com) | Free | PostgreSQL, authentication, Row Level Security, optional 1 GB file storage |
+| [Cloudinary](https://cloudinary.com) | Free | Optional passport photograph storage and delivery |
 | [Vercel](https://vercel.com) | Hobby | Application hosting |
 | [GitHub](https://github.com) | Free | Source control and deployment integration |
 
-All four have a free tier sufficient for a church membership register. No
-paid service is required at any point.
+Cloudinary is optional when using Supabase Storage. Monitor storage and
+bandwidth usage to stay within the providers' free-tier quotas.
 
 ---
 
@@ -182,6 +182,8 @@ in `.gitignore` and must never be committed.
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API | Yes (safe) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Project Settings → API (publishable/anon key) | Yes (safe) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API (secret/service role key) | **Never** |
+| `IMAGE_STORAGE_PROVIDER` | `cloudinary` (default) or `supabase` | No |
+| `SUPABASE_STORAGE_BUCKET` | Optional, defaults to `member-photos` | No |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary console | Yes (safe) |
 | `CLOUDINARY_API_KEY` | Cloudinary console | **Never** |
 | `CLOUDINARY_API_SECRET` | Cloudinary console | **Never** |
@@ -309,6 +311,10 @@ check. RLS is the second line of defence, not the first.
 
 ## 11. Cloudinary configuration
 
+Cloudinary remains the default. To store images alongside the database in
+Supabase instead, follow the alternative setup below; no Cloudinary account
+is needed for new Supabase uploads.
+
 1. Sign in at [cloudinary.com](https://cloudinary.com) and create a free
    account.
 2. From the dashboard copy:
@@ -321,22 +327,78 @@ check. RLS is the second line of defence, not the first.
 4. Under **Settings → Security**, consider restricting the account to
    uploads only from your production domain.
 
+To verify the local credentials and upload configuration, run
+`npm run cloudinary:check`. It checks Cloudinary API authentication, performs
+the same signed upload used by the form with a temporary 1-pixel image, and
+deletes that image afterward. It never prints the API secret. Run it from the
+project root after updating `.env.local`; restart `npm run dev` after changing
+environment variables. If API authentication succeeds but asset creation is
+forbidden, use an API key with upload/create permission for this cloud and
+review any API-key or account upload restrictions.
+
 ### How uploads are secured
 
 - The browser asks the server for an upload ticket
   (`requestUploadSignature` server action).
 - The server rate-limits the request, then signs the timestamp, folder,
-  public ID, **allowed formats**, **maximum file size** and transformation
-  with the API secret.
+  public ID, **allowed formats** and transformation with the API secret.
 - The browser uploads the file straight to Cloudinary using only that
   signature. The secret never leaves the server.
 - The asset public ID is unpredictable (`lfc-<timestamp>-<hash>-<random>`),
   so photographs cannot be enumerated.
-- The client validates the MIME type and size; the server validates the
-  actual file signature (JPEG/PNG/WebP magic bytes) before accepting it.
-  A renamed PDF or executable is rejected.
+- The client checks the MIME type and configured size limit. Cloudinary
+  independently enforces the signed image-format allowlist on uploads.
 - The Cloudinary public ID and metadata are stored in PostgreSQL — never
   just a client-supplied URL.
+
+### Supabase Storage alternative (Free plan, 1 GB)
+
+1. In the same Supabase project used for the database, run
+  [migrations/007_supabase_image_storage.sql](migrations/007_supabase_image_storage.sql)
+  in the SQL editor once. It creates the `member-photos` bucket with a
+  5 MB per-file limit and JPEG, PNG and WebP MIME allowlist.
+2. Set the environment variables:
+
+  ```dotenv
+  IMAGE_STORAGE_PROVIDER="supabase"
+  SUPABASE_STORAGE_BUCKET="member-photos"
+  ```
+
+3. Keep the existing Supabase URL and service-role key. No additional
+  storage credential or public environment switch is needed.
+4. Restart the local application or redeploy on Vercel. New photographs
+  now upload to Supabase. Test upload, preview, directory display and
+  permanent deletion with a disposable member record.
+
+To switch back, set `IMAGE_STORAGE_PROVIDER="cloudinary"` and restart or
+redeploy. Switching affects **new uploads only**, not existing assets.
+Cloudinary photos keep their original public IDs; Supabase photos use
+`supabase:<bucket>/<path>` in the existing `photo_public_id` column. Both
+remain visible in previews, profiles, member cards and print views. Keep
+the Cloudinary cloud name for old photos and API credentials to delete them.
+Do not remove an old Supabase bucket while members still reference it.
+
+The browser uploads directly using a path-specific signed URL (valid for
+two hours, with overwriting disabled). A signed verification ticket lets
+the server download and check the file's size, magic bytes and dimensions
+before accepting its metadata. Invalid files are removed. Signing and
+verification are rate limited; the service-role key never leaves the server.
+No ordinary upload, listing or deletion policies are added for browser roles.
+Review any existing broad Storage policies in an already-used project.
+
+The bucket is **public for delivery**, matching Cloudinary's existing model:
+anyone holding a photograph URL can view it. Random UUID paths prevent easy
+guessing, but public URLs are not access-controlled. Review the configured
+privacy notice to include Supabase photograph storage before using it.
+
+Supabase Free's **1 GB storage allowance is shared across all buckets**, not
+a separate 1 GB per bucket; this integration does not increase that quota.
+Monitor Storage usage and current bandwidth limits in the Supabase dashboard.
+Free-tier delivery uses original files, not paid image transformations, so
+small photos conserve both storage and bandwidth. Abandoned or replaced
+uploads may become orphans and need manual cleanup. If you choose a custom
+bucket, create it with the same public flag, MIME allowlist and size limit.
+Keep the bucket's per-file limit aligned with the form's configured limit.
 
 ---
 
@@ -531,6 +593,8 @@ In the Vercel dashboard: **Project → Settings → Environment Variables**.
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Production, Preview, Development |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable/anon key | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key | **Production only** |
+| `IMAGE_STORAGE_PROVIDER` | `cloudinary` or `supabase` | Production, Preview, Development |
+| `SUPABASE_STORAGE_BUCKET` | `member-photos` | Production, Preview, Development (optional) |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | Production, Preview, Development |
 | `CLOUDINARY_API_KEY` | Cloudinary API key | Production |
 | `CLOUDINARY_API_SECRET` | Cloudinary API secret | **Production only** |
@@ -643,12 +707,18 @@ pg_dump \
 
 ### Photograph backup
 
-Photographs live in Cloudinary, not in the database. To keep a copy:
+Photograph files live in Cloudinary or Supabase Storage, not in PostgreSQL.
+Database backups do not include the image files. To keep a copy:
 
 1. Export the member register to CSV from the dashboard.
 2. For each member with a photograph, use the Cloudinary **Assets** view to
    download the original, or use the Cloudinary Admin API to generate an
    archive.
+
+For Supabase photos, download files from **Storage → member-photos** or
+use the Storage API from a trusted server. Match `supabase:<bucket>/<path>`
+references in the register to their objects, and back up every referenced
+bucket even after switching providers.
 
 ### Restoring a backup
 
@@ -675,14 +745,14 @@ policy**:
 | --- | --- | --- |
 | Keep member records for | 7 years | How long an active member record is retained |
 | Keep deleted records for | 24 months | How long a soft-deleted record stays recoverable |
-| Delete photograph on permanent delete | On | Whether the Cloudinary asset is destroyed when a record is purged |
+| Delete photograph on permanent delete | On | Whether the asset is removed from its original provider when a record is purged |
 
 ### What happens on delete
 
 | Action | Database row | Photograph | Recoverable |
 | --- | --- | --- | --- |
 | Soft delete (the normal delete) | `status = 'deleted'`, timestamp and reason recorded | Kept | Yes — an administrator can restore it |
-| Permanent delete | Row and related rows removed by cascade | Destroyed from Cloudinary | No |
+| Permanent delete | Row and related rows removed by cascade | Removed from its original provider | No |
 
 Every delete and restore is written to the audit log with the actor, the
 record reference and the reason.
@@ -717,6 +787,10 @@ is left in Cloudinary without a database row. Find them with:
 
 A scheduled clean-up job can automate this, but it is not required for the
 free tier and is not included in this release.
+
+For orphaned Supabase files, compare objects in **Storage → member-photos**
+with the stored `supabase:member-photos/<path>` references. Allow time for
+in-progress registrations before deleting unreferenced files.
 
 ---
 
@@ -774,7 +848,7 @@ cached page — force a hard refresh, or check that the deployment completed.
 | Public form loads but titles and units are missing | Migrations not applied, or `003` was skipped | Apply `migrations/003_seed_reference_data.sql` |
 | Sign-in fails with "not enabled for the administration dashboard" | The Auth user has no `app_users` row | Run the bootstrap script, or create the account in **User management** |
 | Sign-in succeeds but the dashboard redirects to the password screen | `must_change_password` is set | Set a new password — this is the intended behaviour for temporary passwords |
-| Photograph upload fails with a signature error | `CLOUDINARY_API_SECRET` is wrong, or the server clock is off | Re-copy the secret; check your system time |
+| Photograph upload fails with a signature or API error | Cloudinary credentials are wrong, the server clock is off, or an account restriction rejected the request | Run `npm run cloudinary:check`; re-copy the credentials and check Cloudinary **Settings → Security** |
 | Photograph upload fails with a format error | The file is not a real JPEG/PNG/WebP | The file signature is validated — convert the image properly |
 | Photographs upload but do not appear | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` is wrong | Re-copy the cloud name and redeploy |
 | CSV opens with garbled names | The reader ignored the UTF-8 BOM | Use Excel's "Data → From Text/CSV" and choose UTF-8 |
@@ -809,8 +883,8 @@ cost or unlimited capacity is made.**
 | Limit | Value | Effect |
 | --- | --- | --- |
 | Database size | 500 MB | Roughly 50,000+ members with text-only records; the database stores no image binaries |
-| Storage | 1 GB | Not used — photographs live in Cloudinary |
-| Bandwidth | 5 GB egress per month | The public form and the dashboard are light on traffic |
+| Storage | 1 GB | Shared file quota used when `IMAGE_STORAGE_PROVIDER=supabase` |
+| Bandwidth | 5 GB egress per month | Supabase photo delivery and verification also consume egress; check current plan limits |
 | **Project pause** | Paused after 7 days of no activity on the free plan | **Important:** a paused project does not accept connections. Visit the dashboard at least weekly, or upgrade |
 | Email (auth) | 2 emails per hour | Only used for password resets, which are rare |
 | Backups | 7 days | Take your own weekly dumps |

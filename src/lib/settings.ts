@@ -22,7 +22,7 @@ const DEFAULT_PRIVACY_NOTICE: PrivacyNotice = {
   retentionYears: 7,
   organisation: "Living Faith Church International — Laderin-Hilltop",
   thirdParties: [
-    "Supabase (hosting, database and authentication)",
+    "Supabase (hosting, database, authentication and optional photograph storage)",
     "Vercel (application hosting)",
     "Cloudinary (photograph storage and delivery)",
   ],

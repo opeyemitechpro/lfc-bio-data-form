@@ -72,7 +72,7 @@ export function createUploadSignature(options?: {
     .slice(0, 10);
   const publicId = `lfc-${Date.now().toString(36)}-${hashPart}-${randomPart.slice(0, 8)}`;
 
-  const transformation = "c-limit,w_2000,h_2000,q_auto:good";
+  const transformation = "c_limit,w_2000,h_2000,q_auto:good";
 
   const paramsToSign = {
     timestamp,
@@ -223,6 +223,19 @@ export function readImageDimensions(
   buffer: Buffer
 ): { width: number; height: number } | null {
   try {
+    if (buffer.length >= 20 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP") {
+      const chunk = buffer.toString("ascii", 12, 16);
+      if (chunk === "VP8X" && buffer.length >= 30) {
+        return { width: buffer.readUIntLE(24, 3) + 1, height: buffer.readUIntLE(27, 3) + 1 };
+      }
+      if (chunk === "VP8 " && buffer.length >= 30 && buffer.toString("hex", 23, 26) === "9d012a") {
+        return { width: buffer.readUInt16LE(26) & 0x3fff, height: buffer.readUInt16LE(28) & 0x3fff };
+      }
+      if (chunk === "VP8L" && buffer.length >= 25 && buffer[20] === 0x2f) {
+        const dimensions = buffer.readUInt32LE(21);
+        return { width: (dimensions & 0x3fff) + 1, height: ((dimensions >>> 14) & 0x3fff) + 1 };
+      }
+    }
     // PNG
     if (
       buffer.length >= 24 &&

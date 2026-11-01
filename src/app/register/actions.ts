@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 
 import { logAuditEvent, AUDIT_ACTIONS } from "@/lib/audit";
 import { createUploadSignature } from "@/lib/cloudinary";
+import { createSupabaseUploadTicket, verifySupabaseUpload, type SupabaseUploadTicket } from "@/lib/image-storage";
+import { env } from "@/lib/env";
 import { createAdminSupabaseClient } from "@/lib/supabase/clients";
 import { getFormSettings, getPrivacyNotice } from "@/lib/settings";
 import { registerMember } from "@/lib/members/register";
@@ -33,11 +35,11 @@ async function requestContext(): Promise<{ ip: string | null; userAgent: string 
 }
 
 /**
- * Issues a signed Cloudinary upload ticket for the public registration form.
+ * Issues a signed upload ticket for the configured photograph provider.
  * Rate limited so the signing endpoint cannot be abused.
  */
-export async function requestUploadSignature(): Promise<
-  ActionResult<{ signature: string; timestamp: number; folder: string; publicId: string; apiKey: string; maxBytes: number; allowedFormats: string; transformation: string }>
+export async function requestUploadSignature(format = "jpg"): Promise<
+  ActionResult<SupabaseUploadTicket | { provider?: "cloudinary"; signature: string; timestamp: number; folder: string; publicId: string; apiKey: string; maxBytes: number; allowedFormats: string; transformation: string }>
 > {
   const { ip } = await requestContext();
   const settings = await getFormSettings();
@@ -51,10 +53,14 @@ export async function requestUploadSignature(): Promise<
   }
 
   try {
+    if (env.server.imageStorageProvider() === "supabase") {
+      return { ok: true, data: await createSupabaseUploadTicket(format, settings.maxUploadBytes) };
+    }
     const params = createUploadSignature({ maxBytes: settings.maxUploadBytes });
     return {
       ok: true,
       data: {
+        provider: "cloudinary",
         signature: params.signature,
         timestamp: params.timestamp,
         folder: params.folder,
@@ -73,6 +79,20 @@ export async function requestUploadSignature(): Promise<
       ok: false,
       message: "Photograph uploads are temporarily unavailable. Please try again shortly.",
     };
+  }
+}
+
+export async function completeSupabasePhotoUpload(token: string): Promise<
+  ActionResult<{ publicId: string; format: string; width: number; height: number; bytes: number }>
+> {
+  const { ip } = await requestContext();
+  if (!(await checkRateLimit("upload-verification", ip ?? "anonymous", 20))) {
+    return { ok: false, message: "Too many upload attempts. Please try again later." };
+  }
+  try {
+    return { ok: true, data: await verifySupabaseUpload(token) };
+  } catch {
+    return { ok: false, message: "The photograph could not be verified. Please choose a valid image within the size limit and try again." };
   }
 }
 

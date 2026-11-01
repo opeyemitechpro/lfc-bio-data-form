@@ -58,7 +58,7 @@ The core register. One row per person.
 | `residential_address` | text | |
 | `membership_duration` | text | `lt_1y` \| `y1_3` \| `y4_6` \| `y7_10` \| `gt_10y` |
 | `suggestions` | text | Free text from the member |
-| `photo_public_id` | text | Cloudinary public ID — **not** a URL, and never client-supplied |
+| `photo_public_id` | text | Cloudinary public ID or `supabase:<bucket>/<path>` storage reference, not a URL |
 | `photo_format`, `photo_width`, `photo_height`, `photo_bytes` | | Photo metadata |
 | `photo_uploaded_at` | timestamptz | |
 | `status` | text | `active` \| `deleted` — soft deletion |
@@ -78,7 +78,8 @@ membership duration, title, and a partial unique index on
 `idempotency_key`.
 
 > **Photographs are never stored in PostgreSQL.** The database holds only the
-> Cloudinary public ID and its metadata.
+> storage reference and its metadata. Migration `007_supabase_image_storage.sql`
+> creates a public Supabase Storage bucket; image bytes live in object storage.
 
 ### `member_phones`
 

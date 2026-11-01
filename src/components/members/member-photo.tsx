@@ -14,11 +14,12 @@ interface MemberPhotoProps {
 }
 
 /**
- * Renders a member photograph from Cloudinary.
+ * Renders a member photograph from its original storage provider.
  *
  * The image is delivered through a Cloudinary transformation that resizes
  * and compresses it, so directory views never load full-resolution
- * originals. When the viewer lacks the "view photographs" permission the
+ * originals. Supabase photos are delivered directly from Storage.
+ * When the viewer lacks the "view photographs" permission the
  * dashboard passes `publicId = null` and the fallback is shown instead.
  */
 export function MemberPhoto({
@@ -60,6 +61,7 @@ export function MemberPhoto({
   return (
     <Image
       src={url}
+      unoptimized={publicId?.startsWith("supabase:")}
       alt={alt}
       width={size === "thumbnail" ? 160 : size === "card" ? 320 : 1200}
       height={size === "thumbnail" ? 160 : size === "card" ? 400 : 1200}

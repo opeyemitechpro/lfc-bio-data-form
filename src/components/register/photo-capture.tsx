@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { buildImageUrl } from "@/lib/cloudinary-url";
-import { requestUploadSignature } from "@/app/register/actions";
+import { completeSupabasePhotoUpload, requestUploadSignature } from "@/app/register/actions";
 
 export interface UploadedPhoto {
   publicId: string;
@@ -37,9 +37,8 @@ function formatBytes(bytes: number): string {
 /**
  * Captures or selects a passport photograph.
  *
- * The file is uploaded directly to Cloudinary using a server-issued
- * signature, so the API secret never reaches the browser. The image is
- * validated client-side for type and size, and again on the server.
+ * Uploads go directly to the selected provider using a server-issued
+ * ticket. Supabase uploads are verified server-side before acceptance.
  */
 export function PhotoCapture({
   value,
@@ -73,9 +72,28 @@ export function PhotoCapture({
 
     setUploading(true);
     try {
-      const signature = await requestUploadSignature();
+      const format = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
+      const signature = await requestUploadSignature(format);
       if (!signature.ok || !signature.data) {
         toast.error(signature.message ?? "Could not start the upload.");
+        return;
+      }
+
+      if (file.size > signature.data.maxBytes) {
+        throw new Error("That photograph exceeds the current upload size limit.");
+      }
+
+      if (signature.data.provider === "supabase") {
+        const response = await fetch(signature.data.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type, "x-upsert": "false" },
+          body: file,
+        });
+        if (!response.ok) throw new Error("The photograph could not be uploaded. Please try again.");
+        const verified = await completeSupabasePhotoUpload(signature.data.verificationToken);
+        if (!verified.ok || !verified.data) throw new Error(verified.message ?? "Could not verify photograph.");
+        onChange(verified.data);
+        toast.success("Photograph uploaded.");
         return;
       }
 
