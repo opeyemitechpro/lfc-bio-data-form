@@ -33,35 +33,18 @@ export default async function RegisterPage() {
       <header className="app-header border-b border-border bg-ink text-ink-foreground">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <ChurchLogo withWordmark inverted priority />
-          <div className="flex items-center gap-2">
-            <ThemeToggle inverse />
-            <Link
-              href="/login"
-              className="rounded-lg border border-white/25 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
-            >
-              Staff sign in
-            </Link>
-          </div>
+          <ThemeToggle inverse />
         </div>
       </header>
 
       {/* Title block */}
       <div className="mx-auto max-w-4xl px-4 pb-8 pt-8 sm:px-6 sm:pt-12">
         <div className="mb-8 text-center">
-          <p className="text-sm font-bold uppercase tracking-widest text-primary">
+          <h1 className="text-balance text-2xl font-bold text-foreground sm:text-3xl">
             Membership Bio-Data Registration
-          </p>
-          <h1 className="mt-2 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Welcome to Living Faith Church International
           </h1>
-          <p className="mx-auto mt-3 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
-            Laderin-Hilltop, Ogun State · Winners Chapel International
-          </p>
           <p className="mx-auto mt-4 max-w-2xl text-balance text-base text-muted-foreground">
-            Please complete the form below to register your membership
-            bio-data and passport photograph. Fields marked with an asterisk
-            are required. Take your time — your information is saved only
-            when you press the submit button.
+            For internal office use within LFC Laderin church only, not for general public use.
           </p>
         </div>
 

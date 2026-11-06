@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import {
   AlertTriangle,
+  ArrowLeft,
   Check,
+  ClipboardCheck,
   Loader2,
   Phone,
   Plus,
@@ -40,6 +42,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomFieldInput } from "@/components/register/custom-field-input";
+import { MemberPhoto } from "@/components/members/member-photo";
+import { validateCustomValues } from "@/lib/custom-fields";
 import {
   PhotoCapture,
   type UploadedPhoto,
@@ -48,6 +52,7 @@ import { submitRegistration } from "@/app/register/actions";
 import { registrationSchema, type RegistrationFormValues } from "@/lib/validation/registration";
 import {
   AGE_CATEGORY_LABELS,
+  GENDER_LABELS,
   MEMBERSHIP_DURATION_LABELS,
   NO_SERVICE_UNITS_OPTION,
   type CustomFieldDefinition,
@@ -105,6 +110,7 @@ export function RegistrationForm({
   const [referenceNo, setReferenceNo] = React.useState<string | null>(null);
   const [photo, setPhoto] = React.useState<UploadedPhoto | null>(null);
   const [noServiceUnits, setNoServiceUnits] = React.useState(false);
+  const [reviewValues, setReviewValues] = React.useState<RegistrationFormValues | null>(null);
 
   const {
     register,
@@ -119,7 +125,9 @@ export function RegistrationForm({
     mode: "onBlur",
     defaultValues: {
       titleId: "",
-      fullName: "",
+      surname: "",
+      firstName: "",
+      otherNames: "",
       gender: "male",
       ageCategory: "adult",
       birthDay: undefined,
@@ -187,8 +195,27 @@ export function RegistrationForm({
     setServerError(null);
     setServerFieldErrors({});
 
+    if (!reviewValues) {
+      const fieldErrors = validateCustomValues(customFields, values.customValues ?? {});
+      if (formSettings.requireAddress && !values.residentialAddress.trim()) {
+        fieldErrors.residentialAddress = "Your residential address is required.";
+      }
+      if (Object.keys(fieldErrors).length > 0) {
+        setServerFieldErrors(fieldErrors);
+        setServerError("Please correct the highlighted fields before reviewing.");
+        return;
+      }
+      if (values.ageCategory === "child" && !formSettings.acceptsChildren) {
+        setServerError("Child registrations are currently closed. Please contact the church office.");
+        return;
+      }
+      setReviewValues(values);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const payload = {
-      ...values,
+      ...reviewValues,
       photo: photo
         ? {
             publicId: photo.publicId,
@@ -200,7 +227,13 @@ export function RegistrationForm({
         : null,
     };
 
-    const result = await submitRegistration(payload);
+    let result;
+    try {
+      result = await submitRegistration(payload);
+    } catch {
+      setServerError("We could not submit your registration. Please check your connection and try again.");
+      return;
+    }
 
     if (result.ok) {
       setSuccess(
@@ -213,7 +246,10 @@ export function RegistrationForm({
     }
 
     setServerError(result.message ?? "Something went wrong. Please try again.");
-    if (result.fieldErrors) setServerFieldErrors(result.fieldErrors);
+    if (result.fieldErrors) {
+      setServerFieldErrors(result.fieldErrors);
+      setReviewValues(null);
+    }
     toast.error(result.message ?? "Please check the form and try again.");
   });
 
@@ -267,6 +303,7 @@ export function RegistrationForm({
                 setSuccess(null);
                 setReferenceNo(null);
                 setNoServiceUnits(false);
+                setReviewValues(null);
               }}
             >
               Register another member
@@ -284,6 +321,68 @@ export function RegistrationForm({
     <form onSubmit={onSubmit} noValidate className="space-y-6">
       <FormErrorBanner message={serverError} />
 
+      {reviewValues ? (
+        <section aria-labelledby="review-title" className="space-y-6">
+          <h2 id="review-title" tabIndex={-1} ref={(node) => node?.focus()} className="text-2xl font-bold">
+            Review registration
+          </h2>
+          <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            {[
+              ["Title", titles.find((title) => title.id === reviewValues.titleId)?.name],
+              ["Surname", reviewValues.surname],
+              ["First name", reviewValues.firstName],
+              ["Other names", reviewValues.otherNames],
+              ["Gender", GENDER_LABELS[reviewValues.gender]],
+              ["Age category", AGE_CATEGORY_LABELS[reviewValues.ageCategory]],
+              ["Date of birth", reviewValues.birthMonth ? `${reviewValues.birthDay} ${MONTHS[reviewValues.birthMonth - 1]}` : ""],
+              ["Primary phone number", reviewValues.primaryPhone],
+              ["WhatsApp number", reviewValues.whatsappSameAsPrimary ? reviewValues.primaryPhone : reviewValues.whatsappPhone],
+              ...(formSettings.allowAdditionalPhones ? [["Additional phone numbers", reviewValues.additionalPhones?.join(", ")]] : []),
+              ["Email address", reviewValues.email],
+              ["Residential address", reviewValues.residentialAddress],
+              ["Membership duration", MEMBERSHIP_DURATION_LABELS[reviewValues.membershipDuration]],
+              ["Service units", serviceUnits.filter((unit) => reviewValues.serviceUnitIds?.includes(unit.id)).map((unit) => unit.name).join(", ") || "No service units"],
+              ...(formSettings.allowSuggestions ? [["Suggestions or observations", reviewValues.suggestions]] : []),
+              ...(reviewValues.ageCategory === "child" ? [
+                ["Parent or guardian consent", reviewValues.isChildRegistration ? "Accepted" : "Not accepted"],
+                ["Parent or guardian name", reviewValues.guardianName],
+                ["Relationship to the child", reviewValues.guardianRelationship],
+                ["Parent or guardian phone number", reviewValues.guardianPhone],
+              ] : []),
+              ...customFields.map((field) => {
+                const value = reviewValues.customValues?.[field.field_key];
+                return [field.label, typeof value === "boolean" ? (value ? "Yes" : "No") : Array.isArray(value) ? value.join(", ") : String(value ?? "")];
+              }),
+              ["Privacy consent", reviewValues.consentAccepted ? "Accepted" : "Not accepted"],
+              ["Privacy notice version", privacyNotice.version],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0 border-b border-border pb-3">
+                <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
+                <dd className="mt-1 whitespace-pre-wrap break-words">{value || "Not provided"}</dd>
+              </div>
+            ))}
+          </dl>
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-muted-foreground">Passport photograph</h3>
+            {photo ? <MemberPhoto publicId={photo.publicId} alt="Registration passport photograph" size="card" className="h-40 w-32" /> : <p>Not provided</p>}
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => {
+              setReviewValues(null);
+              setServerError(null);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}>
+              <ArrowLeft aria-hidden="true" /> Back to edit
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="sm:flex-1">
+              {isSubmitting ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Check aria-hidden="true" />}
+              {isSubmitting ? "Submitting your registration..." : "Submit registration"}
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      <div hidden={Boolean(reviewValues)} className="space-y-6">
       {/* ---------------------------------------------------------- */}
       {/* Personal information                                          */}
       {/* ---------------------------------------------------------- */}
@@ -327,21 +426,17 @@ export function RegistrationForm({
               )}
             />          </FormField>
 
-          <FormField
-            id="fullName"
-            label="Full name"
-            required
-            error={errorFor("fullName")}
-            helpText="Enter your first name and surname together."
-          >
-            <Input
-              id="fullName"
-              autoComplete="name"
-              placeholder="e.g. John Ade Okafor"
-              aria-invalid={Boolean(errorFor("fullName")) || undefined}
-              {...register("fullName")}
-            />
-          </FormField>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <FormField id="surname" label="Surname" required error={errorFor("surname")}>
+              <Input id="surname" autoComplete="family-name" aria-invalid={Boolean(errorFor("surname")) || undefined} {...register("surname")} />
+            </FormField>
+            <FormField id="firstName" label="First name" optional error={errorFor("firstName")}>
+              <Input id="firstName" autoComplete="given-name" aria-invalid={Boolean(errorFor("firstName")) || undefined} {...register("firstName")} />
+            </FormField>
+            <FormField id="otherNames" label="Other names" optional error={errorFor("otherNames")}>
+              <Input id="otherNames" autoComplete="additional-name" aria-invalid={Boolean(errorFor("otherNames")) || undefined} {...register("otherNames")} />
+            </FormField>
+          </div>
 
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField
@@ -968,7 +1063,7 @@ export function RegistrationForm({
       {/* ---------------------------------------------------------- */}
       {/* Submit                                                        */}
       {/* ---------------------------------------------------------- */}
-      <div className="sticky bottom-0 z-10 -mx-4 border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-6">
+      <div className="border-t border-border py-4">
         <Button
           type="submit"
           size="lg"
@@ -981,13 +1076,13 @@ export function RegistrationForm({
               Submitting your registration…
             </>
           ) : (
-            "Submit registration"
+            <><ClipboardCheck aria-hidden="true" /> Review registration</>
           )}
         </Button>
         <p className="mt-2 text-center text-sm text-muted-foreground">
-          Please check your details before submitting. You will be shown a
-          reference number once your registration is saved.
+          Your registration is saved only after final submission.
         </p>
+      </div>
       </div>
     </form>
   );

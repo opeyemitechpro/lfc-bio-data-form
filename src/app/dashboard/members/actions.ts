@@ -18,7 +18,7 @@ import { registerMember } from "@/lib/members/register";
 import { assertMemberVisible } from "@/lib/members/scope";
 import { getPrivacyNotice } from "@/lib/settings";
 import { normalizeEmail, normalizePhone } from "@/lib/phone";
-import { adminMemberSchema } from "@/lib/validation/registration";
+import { adminMemberSchema, combineMemberName, memberNameFields } from "@/lib/validation/registration";
 
 export interface MemberActionResult {
   ok: boolean;
@@ -94,7 +94,9 @@ export async function createMemberAction(
 
   try {
     const result = await registerMember({
-      fullName: data.fullName,
+      surname: data.surname,
+      firstName: data.firstName,
+      otherNames: data.otherNames,
       titleId: data.titleId,
       gender: data.gender,
       ageCategory: data.ageCategory,
@@ -154,7 +156,7 @@ export async function createMemberAction(
 
 const updateSchema = z.object({
   memberId: z.string().uuid(),
-  fullName: z.string().trim().min(2, "Please enter the full name.").max(200),
+  ...memberNameFields,
   titleId: z.string().trim().min(1, "Please select a title."),
   gender: z.enum(["male", "female"]),
   ageCategory: z.enum(["child", "youth", "adult"]),
@@ -181,6 +183,8 @@ const updateSchema = z.object({
     .nullable()
     .optional(),
   removePhoto: z.boolean().optional(),
+}).refine((data) => combineMemberName(data).length <= 200, {
+  path: ["surname"], message: "Please keep the combined name under 200 characters.",
 });
 
 /** Updates an existing member record. */
@@ -248,7 +252,11 @@ export async function updateMemberAction(
     : data.whatsappPhone.trim() || null;
 
   const changedFields: string[] = [];
-  if (current.full_name !== data.fullName) changedFields.push("full_name");
+  const fullName = combineMemberName(data);
+  if (current.full_name !== fullName) changedFields.push("full_name");
+  if (current.surname !== data.surname) changedFields.push("surname");
+  if ((current.first_name ?? "") !== data.firstName) changedFields.push("first_name");
+  if ((current.other_names ?? "") !== data.otherNames) changedFields.push("other_names");
   if (current.primary_phone_normalized !== primaryPhoneNormalized)
     changedFields.push("primary_phone");
   if ((current.email_normalized ?? "") !== normalizeEmail(data.email))
@@ -262,7 +270,10 @@ export async function updateMemberAction(
   const { error: updateError } = await admin
     .from("members")
     .update({
-      full_name: data.fullName,
+      full_name: fullName,
+      surname: data.surname,
+      first_name: data.firstName || null,
+      other_names: data.otherNames || null,
       title_id: data.titleId,
       gender: data.gender,
       age_category: data.ageCategory,

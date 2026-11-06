@@ -6,7 +6,9 @@ import { validateCustomValues } from "@/lib/custom-fields";
 import type { CustomFieldDefinition } from "@/lib/types";
 
 export interface RegistrationInput {
-  fullName: string;
+  surname: string;
+  firstName: string;
+  otherNames: string;
   titleId: string | null;
   gender: "male" | "female";
   ageCategory: "child" | "youth" | "adult";
@@ -76,8 +78,10 @@ export async function registerMember(
 
   const emailNormalized = input.email ? normalizeEmail(input.email) : null;
 
-  const { data, error } = await admin.rpc("create_member_registration", {
-    p_full_name: input.fullName.trim().replace(/\s+/g, " "),
+  const { data, error } = await admin.rpc("create_member_registration_named", { p_registration: {
+    p_surname: input.surname,
+    p_first_name: input.firstName,
+    p_other_names: input.otherNames,
     p_title_id: input.titleId,
     p_gender: input.gender,
     p_age_category: input.ageCategory,
@@ -109,7 +113,7 @@ export async function registerMember(
     p_guardian_name: input.consent.guardianName,
     p_guardian_relationship: input.consent.guardianRelationship,
     p_guardian_phone: input.consent.guardianPhone,
-  });
+  } });
 
   if (error) {
     throw new Error(`Failed to save registration: ${error.message}`);

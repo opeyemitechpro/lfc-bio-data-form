@@ -6,6 +6,23 @@ import { expect, test } from "@playwright/test";
  * These tests exercise the visitor journey: opening the form, validating
  * required fields, checking the privacy notice and submitting.
  */
+test.describe("Registration home page", () => {
+  for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 812 }, { width: 1440, height: 900 }]) {
+    test(`fits one screen at ${viewport.width}px without staff sign-in links`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await page.goto("/");
+      await expect(page.getByRole("link", { name: "Register", exact: true })).toBeVisible();
+      await expect(page.getByText("Please click the button to register", { exact: true })).toBeVisible();
+      await expect(page.getByText(/For internal office use within LFC Laderin/)).toBeVisible();
+      await expect(page.locator('a[href="/login"]')).toHaveCount(0);
+      expect(await page.evaluate(() => ({
+        horizontal: document.documentElement.scrollWidth > innerWidth,
+        vertical: document.documentElement.scrollHeight > innerHeight + 1,
+      }))).toEqual({ horizontal: false, vertical: false });
+    });
+  }
+});
+
 test.describe("Public registration form", () => {
   test("the registration page loads and shows the church identity", async ({
     page,
@@ -14,7 +31,7 @@ test.describe("Public registration form", () => {
 
     await expect(page).toHaveTitle(/Membership Bio-Data Registration/i);
     await expect(
-      page.getByRole("heading", { name: /Welcome to Living Faith Church/i })
+      page.getByRole("heading", { name: /Membership Bio-Data Registration/i })
     ).toBeVisible();
     await expect(page.getByText(/Laderin-Hilltop/i).first()).toBeVisible();
   });
@@ -47,7 +64,7 @@ test.describe("Public registration form", () => {
   }) => {
     await page.goto("/register");
 
-    await page.getByRole("button", { name: /Submit registration/i }).click();
+    await page.getByRole("button", { name: /Review registration/i }).click();
 
     // The form must not submit, and the errors must be announced.
     await expect(page.getByRole("alert").first()).toBeVisible();
@@ -59,7 +76,7 @@ test.describe("Public registration form", () => {
     await page.goto("/register");
 
     await expect(
-      page.getByRole("heading", { name: /Welcome to Living Faith Church/i })
+      page.getByRole("heading", { name: /Membership Bio-Data Registration/i })
     ).toBeVisible();
 
     // The page must not scroll sideways on a phone.
@@ -67,6 +84,11 @@ test.describe("Public registration form", () => {
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
     );
     expect(hasHorizontalOverflow).toBe(false);
+
+    const position = await page.getByRole("button", { name: /Review registration/i }).evaluate(
+      (button) => getComputedStyle(button.parentElement!).position
+    );
+    expect(position).toBe("static");
   });
 
   test("a photograph is required before a registration can be completed", async ({

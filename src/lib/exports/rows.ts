@@ -14,6 +14,9 @@ import type { CustomFieldDefinition } from "@/lib/types";
 export interface ExportRow {
   reference_no: string;
   full_name: string;
+  surname: string;
+  first_name: string;
+  other_names: string;
   title: string;
   gender: string;
   age_category: string;
@@ -147,6 +150,9 @@ export async function collectExportRows(
     const exportRow: ExportRow = {
       reference_no: String(row.reference_no),
       full_name: String(row.full_name),
+      surname: String(row.surname ?? ""),
+      first_name: String(row.first_name ?? ""),
+      other_names: String(row.other_names ?? ""),
       title: row.title_id ? titleMap.get(String(row.title_id)) ?? "" : "",
       gender: GENDER_LABELS[row.gender as keyof typeof GENDER_LABELS] ?? String(row.gender),
       age_category:
@@ -229,6 +235,9 @@ export function buildExportHeadings(
   const headings = [
     "Reference No",
     "Full Name",
+    "Surname",
+    "First Name",
+    "Other Names",
     "Title",
     "Gender",
     "Age Category",
@@ -264,6 +273,9 @@ export function rowToCells(
   const cells = [
     row.reference_no,
     row.full_name,
+    row.surname,
+    row.first_name,
+    row.other_names,
     row.title,
     row.gender,
     row.age_category,

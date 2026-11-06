@@ -10,12 +10,17 @@ import {
 export const normalizeName = (value: string): string =>
   value.replace(/\s+/g, " ").trim();
 
-const nameSchema = z
-  .string()
-  .min(2, "Please enter your full name.")
-  .max(200, "That name is too long.")
-  .transform(normalizeName)
-  .refine((value) => value.length >= 2, "Please enter your full name.");
+const namePartSchema = z.string().max(200, "That name is too long.").transform(normalizeName);
+
+export const memberNameFields = {
+  surname: namePartSchema.refine((value) => value.length >= 2, "Please enter your surname (at least 2 characters)."),
+  firstName: namePartSchema,
+  otherNames: namePartSchema,
+};
+
+export function combineMemberName(names: { surname: string; firstName: string; otherNames: string }): string {
+  return [names.surname, names.firstName, names.otherNames].map(normalizeName).filter(Boolean).join(" ");
+}
 
 const phoneSchema = z
   .string()
@@ -58,7 +63,7 @@ const emailSchema = z
  */
 const registrationFields = {
   titleId: z.string().trim().min(1, "Please select a title."),
-  fullName: nameSchema,
+  ...memberNameFields,
   gender: z.enum(GENDERS, { message: "Please select your gender." }),
   ageCategory: z.enum(AGE_CATEGORIES, { message: "Please select an age category." }),
   birthDay: z
@@ -119,6 +124,9 @@ const registrationFields = {
  */
 function validateRegistrationFields(
   data: {
+    surname: string;
+    firstName: string;
+    otherNames: string;
     birthDay?: number;
     birthMonth?: number;
     isChildRegistration: boolean;
@@ -127,6 +135,9 @@ function validateRegistrationFields(
   },
   ctx: z.RefinementCtx
 ): void {
+  if (combineMemberName(data).length > 200) {
+    ctx.addIssue({ code: "custom", path: ["surname"], message: "Please keep the combined name under 200 characters." });
+  }
   const hasDay = data.birthDay !== undefined && data.birthDay !== null;
   const hasMonth = data.birthMonth !== undefined && data.birthMonth !== null;
 

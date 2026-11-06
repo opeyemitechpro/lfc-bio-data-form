@@ -43,7 +43,10 @@ The core register. One row per person.
 | --- | --- | --- |
 | `id` | uuid | Primary key |
 | `reference_no` | text | **Unique.** `LFC-LH-<year>-<6 digits>`, from a sequence so concurrent submissions never collide |
-| `full_name` | text | 2–200 characters, whitespace-normalised |
+| `full_name` | text | 2–200 characters; derived surname-first when name parts are present; legacy names preserved |
+| `surname` | text | Required for new registrations; null on legacy records until verified by staff |
+| `first_name` | text | Optional |
+| `other_names` | text | Optional |
 | `title_id` | uuid → `titles` | `ON DELETE SET NULL` — a deleted title does not delete a member |
 | `gender` | text | `male` \| `female` (check constraint) |
 | `age_category` | text | `child` \| `youth` \| `adult` (check constraint) |
@@ -330,7 +333,7 @@ primary control.
 | Operation | Client | Notes |
 | --- | --- | --- |
 | Public form configuration (titles, units, custom fields, privacy notice) | `service_role` (server) | Read-only reference data, returned to the client as props |
-| Public registration write | `service_role` (server) via `create_member_registration` | Transactional |
+| Public registration write | `service_role` (server) via `create_member_registration_named` | Transactional wrapper around `create_member_registration`; stores name parts atomically |
 | Cloudinary upload signing | `service_role` (server) | The secret never reaches the browser |
 | Session lookup and sign-in | `anon`/`authenticated` (SSR client) | Cookies, RLS applies |
 | Dashboard member reads and writes | `service_role` (server) | After server-side authorization |

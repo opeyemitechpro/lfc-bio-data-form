@@ -163,6 +163,16 @@ export default async function MemberProfilePage({ params }: PageProps) {
             </div>
 
             <dl className="grid gap-3 sm:grid-cols-2">
+              {member.surname ? [
+                ["Surname", member.surname],
+                ["First name", member.first_name],
+                ["Other names", member.other_names],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</dt>
+                  <dd className="break-words font-medium">{value || "Not provided"}</dd>
+                </div>
+              )) : null}
               <div className="flex items-start gap-2">
                 <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <div>

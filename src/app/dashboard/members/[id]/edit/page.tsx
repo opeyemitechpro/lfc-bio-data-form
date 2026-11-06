@@ -57,6 +57,9 @@ export default async function EditMemberPage({ params }: PageProps) {
   const initial: MemberFormInitialValues = {
     id: member.id,
     full_name: member.full_name,
+    surname: member.surname,
+    first_name: member.first_name,
+    other_names: member.other_names,
     title_id: member.title_id,
     gender: member.gender,
     age_category: member.age_category,

@@ -147,6 +147,9 @@ export interface MemberRecord {
   id: string;
   reference_no: string;
   full_name: string;
+  surname: string | null;
+  first_name: string | null;
+  other_names: string | null;
   title_id: string | null;
   title_name: string | null;
   gender: Gender;

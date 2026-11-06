@@ -195,7 +195,9 @@ export async function submitRegistration(
 
   try {
     const result = await registerMember({
-      fullName: data.fullName,
+      surname: data.surname,
+      firstName: data.firstName,
+      otherNames: data.otherNames,
       titleId: data.titleId,
       gender: data.gender,
       ageCategory: data.ageCategory,

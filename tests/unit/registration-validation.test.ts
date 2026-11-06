@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   adminMemberSchema,
+  combineMemberName,
   registrationSchema,
 } from "@/lib/validation/registration";
 
 const validPayload = {
   titleId: "11111111-1111-4111-8111-111111111111",
-  fullName: "John Ade Okafor",
+  surname: "Okafor",
+  firstName: "John",
+  otherNames: "Ade",
   gender: "male" as const,
   ageCategory: "adult" as const,
   birthDay: 15,
@@ -50,21 +53,35 @@ describe("registrationSchema", () => {
     }
   });
 
-  it("requires a full name of at least two characters", () => {
-    expect(registrationSchema.safeParse({ ...validPayload, fullName: "J" }).success).toBe(
-      false
-    );
+  it("requires a surname", () => {
+    for (const surname of ["", "   "]) {
+      expect(registrationSchema.safeParse({ ...validPayload, surname }).success).toBe(false);
+    }
   });
 
-  it("normalises whitespace in the full name", () => {
+  it("allows surname-only registration", () => {
+    const result = registrationSchema.safeParse({ ...validPayload, firstName: "", otherNames: "" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(combineMemberName(result.data)).toBe("Okafor");
+  });
+
+  it("normalises whitespace in each name and combines surname first", () => {
     const result = registrationSchema.safeParse({
       ...validPayload,
-      fullName: "  John   Ade   Okafor  ",
+      surname: "  Okafor  ",
+      firstName: " John ",
+      otherNames: " Ade   James ",
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.fullName).toBe("John Ade Okafor");
+      expect(result.data.surname).toBe("Okafor");
+      expect(result.data.otherNames).toBe("Ade James");
+      expect(combineMemberName(result.data)).toBe("Okafor John Ade James");
     }
+  });
+
+  it("rejects a combined name longer than the storage limit", () => {
+    expect(registrationSchema.safeParse({ ...validPayload, surname: "a".repeat(150), firstName: "b".repeat(100) }).success).toBe(false);
   });
 
   it("requires a title", () => {

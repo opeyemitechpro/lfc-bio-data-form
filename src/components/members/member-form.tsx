@@ -56,6 +56,9 @@ const DAYS = Array.from({ length: 31 }, (_, index) => index + 1);
 export interface MemberFormInitialValues {
   id?: string;
   full_name: string;
+  surname: string | null;
+  first_name: string | null;
+  other_names: string | null;
   title_id: string | null;
   gender: "male" | "female";
   age_category: "child" | "youth" | "adult";
@@ -130,7 +133,9 @@ export function MemberForm({
     mode: "onBlur",
     defaultValues: {
       titleId: initial?.title_id ?? "",
-      fullName: initial?.full_name ?? "",
+      surname: initial?.surname ?? "",
+      firstName: initial?.first_name ?? "",
+      otherNames: initial?.other_names ?? "",
       gender: initial?.gender ?? "male",
       ageCategory: initial?.age_category ?? "adult",
       birthDay: initial?.birth_day ?? undefined,
@@ -238,6 +243,11 @@ export function MemberForm({
           <CardTitle className="text-xl">Personal information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
+          {initial && !initial.surname ? (
+            <p className="break-words text-sm text-muted-foreground">
+              Previously recorded full name: {initial.full_name}. Please verify the name parts before saving.
+            </p>
+          ) : null}
           <div className="grid gap-5 sm:grid-cols-2">
             <FormField id="title" label="Title" required error={errorFor("titleId")}>
               <Controller
@@ -260,12 +270,14 @@ export function MemberForm({
               />
             </FormField>
 
-            <FormField id="fullName" label="Full name" required error={errorFor("fullName")}>
-              <Input
-                id="fullName"
-                aria-invalid={Boolean(errorFor("fullName")) || undefined}
-                {...register("fullName")}
-              />
+            <FormField id="surname" label="Surname" required error={errorFor("surname")}>
+              <Input id="surname" autoComplete="family-name" aria-invalid={Boolean(errorFor("surname")) || undefined} {...register("surname")} />
+            </FormField>
+            <FormField id="firstName" label="First name" optional error={errorFor("firstName")}>
+              <Input id="firstName" autoComplete="given-name" aria-invalid={Boolean(errorFor("firstName")) || undefined} {...register("firstName")} />
+            </FormField>
+            <FormField id="otherNames" label="Other names" optional error={errorFor("otherNames")}>
+              <Input id="otherNames" autoComplete="additional-name" aria-invalid={Boolean(errorFor("otherNames")) || undefined} {...register("otherNames")} />
             </FormField>
 
             <FormField id="gender" label="Gender" required error={errorFor("gender")}>

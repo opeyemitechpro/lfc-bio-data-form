@@ -238,13 +238,31 @@ npm run migrations:list
 | `003_seed_reference_data.sql` | Permission catalogue, built-in roles, titles, service units, default settings |
 | `004_bootstrap_helpers.sql` | The `grant_superadmin_principal` function and the ordinary-users directory view |
 | `005_registration_rpc.sql` | The transactional `create_member_registration` function |
+| `006_fix_registration_reference.sql` | Registration reference and RPC fixes |
+| `007_supabase_image_storage.sql` | Supabase photograph storage bucket and policies |
+| `008_member_name_parts.sql` | Separate name fields and transactional `create_member_registration_named` wrapper |
 
 ### Applying with the Supabase SQL editor (recommended)
 
 1. Open **SQL Editor** in the Supabase dashboard.
 2. Open a new query.
 3. Paste the entire contents of `001_init_schema.sql` and click **Run**.
-4. Repeat for `002` through `005`, in order.
+4. Repeat for `002` through `008`, in order.
+
+For an existing deployment with migrations 001-007 applied, apply
+[migrations/008_member_name_parts.sql](migrations/008_member_name_parts.sql)
+before deploying the updated app. Registration and dashboard creation now require
+`create_member_registration_named`. It stores surname (required), first name and
+other names (optional) in the same transaction as the member registration.
+The combined name remains available for search, membership cards and reports.
+Existing names are preserved without guessing their parts; staff must verify
+the name fields when editing a legacy record. Exports include all three fields.
+
+The home page is intended for internal office use within LFC Laderin church,
+not general public use. The form now opens a review screen before saving;
+staff can return to edit without losing entered details or the photograph.
+The notice does not replace access control: the registration URL remains
+unauthenticated, while staff sign-in is available directly at `/login`.
 
 ### Applying with psql
 
@@ -257,6 +275,9 @@ psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/002_rl
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/003_seed_reference_data.sql
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/004_bootstrap_helpers.sql
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/005_registration_rpc.sql
+psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/006_fix_registration_reference.sql
+psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/007_supabase_image_storage.sql
+psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/008_member_name_parts.sql
 ```
 
 > **Warning:** never run `DROP`, `TRUNCATE` or `DELETE` against the
