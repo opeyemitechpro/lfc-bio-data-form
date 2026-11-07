@@ -69,6 +69,10 @@ export interface MemberFormInitialValues {
   whatsapp_phone: string | null;
   email: string | null;
   residential_address: string | null;
+  next_of_kin_full_name: string | null;
+  next_of_kin_phone: string | null;
+  next_of_kin_relationship: string | null;
+  next_of_kin_address: string | null;
   membership_duration: "lt_1y" | "y1_3" | "y4_6" | "y7_10" | "gt_10y";
   suggestions: string | null;
   service_unit_ids: string[];
@@ -147,6 +151,10 @@ export function MemberForm({
       additionalPhones: initial?.additional_phones ?? [],
       email: initial?.email ?? "",
       residentialAddress: initial?.residential_address ?? "",
+      nextOfKinFullName: initial?.next_of_kin_full_name ?? "",
+      nextOfKinPhone: initial?.next_of_kin_phone ?? "",
+      nextOfKinRelationship: initial?.next_of_kin_relationship ?? "",
+      nextOfKinAddress: initial?.next_of_kin_address ?? "",
       membershipDuration: initial?.membership_duration ?? "lt_1y",
       suggestions: initial?.suggestions ?? "",
       photo: null,
@@ -528,6 +536,28 @@ export function MemberForm({
               autoComplete="street-address"
               {...register("residentialAddress")}
             />
+          </FormField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Next of kin</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField id="nextOfKinFullName" label="Next-of-kin full name" optional error={errorFor("nextOfKinFullName")}>
+              <Input id="nextOfKinFullName" autoComplete="off" {...register("nextOfKinFullName")} aria-invalid={Boolean(errorFor("nextOfKinFullName")) || undefined} />
+            </FormField>
+            <FormField id="nextOfKinPhone" label="Next-of-kin phone number" optional error={errorFor("nextOfKinPhone")}>
+              <Input id="nextOfKinPhone" type="tel" inputMode="tel" autoComplete="off" {...register("nextOfKinPhone")} aria-invalid={Boolean(errorFor("nextOfKinPhone")) || undefined} />
+            </FormField>
+          </div>
+          <FormField id="nextOfKinRelationship" label="Next-of-kin relationship" optional error={errorFor("nextOfKinRelationship")}>
+            <Input id="nextOfKinRelationship" autoComplete="off" {...register("nextOfKinRelationship")} aria-invalid={Boolean(errorFor("nextOfKinRelationship")) || undefined} />
+          </FormField>
+          <FormField id="nextOfKinAddress" label="Next-of-kin current address" optional error={errorFor("nextOfKinAddress")}>
+            <Textarea id="nextOfKinAddress" autoComplete="off" {...register("nextOfKinAddress")} aria-invalid={Boolean(errorFor("nextOfKinAddress")) || undefined} />
           </FormField>
         </CardContent>
       </Card>

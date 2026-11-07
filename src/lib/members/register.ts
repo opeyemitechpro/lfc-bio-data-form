@@ -20,6 +20,10 @@ export interface RegistrationInput {
   additionalPhones: string[];
   email: string | null;
   residentialAddress: string | null;
+  nextOfKinFullName?: string | null;
+  nextOfKinPhone?: string | null;
+  nextOfKinRelationship?: string | null;
+  nextOfKinAddress?: string | null;
   membershipDuration: "lt_1y" | "y1_3" | "y4_6" | "y7_10" | "gt_10y";
   suggestions: string | null;
   photoPublicId: string | null;
@@ -95,6 +99,10 @@ export async function registerMember(
     p_email: input.email ? input.email.trim() : null,
     p_email_normalized: emailNormalized,
     p_residential_address: input.residentialAddress?.trim() || null,
+    p_next_of_kin_full_name: input.nextOfKinFullName?.trim() || null,
+    p_next_of_kin_phone: input.nextOfKinPhone?.trim() || null,
+    p_next_of_kin_relationship: input.nextOfKinRelationship?.trim() || null,
+    p_next_of_kin_address: input.nextOfKinAddress?.trim() || null,
     p_membership_duration: input.membershipDuration,
     p_suggestions: input.suggestions?.trim() || null,
     p_photo_public_id: input.photoPublicId,

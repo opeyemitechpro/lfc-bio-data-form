@@ -36,12 +36,12 @@ test.describe("Public registration form", () => {
     await expect(page.getByText(/Laderin-Hilltop/i).first()).toBeVisible();
   });
 
-  test("the privacy notice is shown and the consent box is unchecked", async ({
+  test("only the consent checkbox remains and it starts unchecked", async ({
     page,
   }) => {
     await page.goto("/register");
 
-    await expect(page.getByText(/Privacy notice and consent/i)).toBeVisible();
+    await expect(page.getByText(/Privacy notice and consent/i)).toHaveCount(0);
 
     const consent = page.getByLabel(/I have read the privacy notice/i);
     await expect(consent).not.toBeChecked();

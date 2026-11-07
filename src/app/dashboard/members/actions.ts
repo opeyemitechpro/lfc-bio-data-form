@@ -18,7 +18,7 @@ import { registerMember } from "@/lib/members/register";
 import { assertMemberVisible } from "@/lib/members/scope";
 import { getPrivacyNotice } from "@/lib/settings";
 import { normalizeEmail, normalizePhone } from "@/lib/phone";
-import { adminMemberSchema, combineMemberName, memberNameFields } from "@/lib/validation/registration";
+import { adminMemberSchema, combineMemberName, memberNameFields, nextOfKinFields } from "@/lib/validation/registration";
 
 export interface MemberActionResult {
   ok: boolean;
@@ -108,6 +108,10 @@ export async function createMemberAction(
       additionalPhones: (data.additionalPhones ?? []).filter((p) => p.trim().length > 0),
       email: data.email.trim() || null,
       residentialAddress: data.residentialAddress.trim() || null,
+      nextOfKinFullName: data.nextOfKinFullName?.trim() || null,
+      nextOfKinPhone: data.nextOfKinPhone?.trim() || null,
+      nextOfKinRelationship: data.nextOfKinRelationship?.trim() || null,
+      nextOfKinAddress: data.nextOfKinAddress?.trim() || null,
       membershipDuration: data.membershipDuration,
       suggestions: data.suggestions.trim() || null,
       photoPublicId: data.photo?.publicId ?? null,
@@ -157,6 +161,7 @@ export async function createMemberAction(
 const updateSchema = z.object({
   memberId: z.string().uuid(),
   ...memberNameFields,
+  ...nextOfKinFields,
   titleId: z.string().trim().min(1, "Please select a title."),
   gender: z.enum(["male", "female"]),
   ageCategory: z.enum(["child", "youth", "adult"]),
@@ -289,6 +294,10 @@ export async function updateMemberAction(
       email: data.email.trim() || null,
       email_normalized: normalizeEmail(data.email) || null,
       residential_address: data.residentialAddress.trim() || null,
+      ...(data.nextOfKinFullName !== undefined ? { next_of_kin_full_name: data.nextOfKinFullName || null } : {}),
+      ...(data.nextOfKinPhone !== undefined ? { next_of_kin_phone: data.nextOfKinPhone || null } : {}),
+      ...(data.nextOfKinRelationship !== undefined ? { next_of_kin_relationship: data.nextOfKinRelationship || null } : {}),
+      ...(data.nextOfKinAddress !== undefined ? { next_of_kin_address: data.nextOfKinAddress || null } : {}),
       membership_duration: data.membershipDuration,
       suggestions: data.suggestions.trim() || null,
       ...(photoChanged

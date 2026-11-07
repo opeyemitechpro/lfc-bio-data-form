@@ -241,13 +241,14 @@ npm run migrations:list
 | `006_fix_registration_reference.sql` | Registration reference and RPC fixes |
 | `007_supabase_image_storage.sql` | Supabase photograph storage bucket and policies |
 | `008_member_name_parts.sql` | Separate name fields and transactional `create_member_registration_named` wrapper |
+| `009_next_of_kin_and_service_units.sql` | Optional next-of-kin storage and Youth Alive Fellowship, Security, Gilead Medical and Decoration units |
 
 ### Applying with the Supabase SQL editor (recommended)
 
 1. Open **SQL Editor** in the Supabase dashboard.
 2. Open a new query.
 3. Paste the entire contents of `001_init_schema.sql` and click **Run**.
-4. Repeat for `002` through `008`, in order.
+4. Repeat for `002` through `009`, in order.
 
 For an existing deployment with migrations 001-007 applied, apply
 [migrations/008_member_name_parts.sql](migrations/008_member_name_parts.sql)
@@ -264,6 +265,14 @@ staff can return to edit without losing entered details or the photograph.
 The notice does not replace access control: the registration URL remains
 unauthenticated, while staff sign-in is available directly at `/login`.
 
+Apply [migrations/009_next_of_kin_and_service_units.sql](migrations/009_next_of_kin_and_service_units.sql)
+after migration 008 before deploying next-of-kin collection. All four details
+(full name, phone, relationship and current address) are optional, appear on
+registration review, and can be viewed or edited in the dashboard. The migration
+also adds the four requested service units. The registration form retains the
+required consent checkbox and privacy-policy link, without the long notice
+section or privacy metadata on review. Consent records are still saved.
+
 ### Applying with psql
 
 ```bash
@@ -278,6 +287,7 @@ psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/005_re
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/006_fix_registration_reference.sql
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/007_supabase_image_storage.sql
 psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/008_member_name_parts.sql
+psql "<your-database-connection-string>" -v ON_ERROR_STOP=1 -f migrations/009_next_of_kin_and_service_units.sql
 ```
 
 > **Warning:** never run `DROP`, `TRUNCATE` or `DELETE` against the

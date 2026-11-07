@@ -162,6 +162,10 @@ export interface MemberRecord {
   whatsapp_phone: string | null;
   email: string | null;
   residential_address: string | null;
+  next_of_kin_full_name: string | null;
+  next_of_kin_phone: string | null;
+  next_of_kin_relationship: string | null;
+  next_of_kin_address: string | null;
   membership_duration: MembershipDuration;
   suggestions: string | null;
   photo_public_id: string | null;

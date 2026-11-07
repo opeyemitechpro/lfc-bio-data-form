@@ -36,6 +36,13 @@ const phoneSchema = z
     "Please enter a valid phone number."
   );
 
+export const nextOfKinFields = {
+  nextOfKinFullName: z.string().trim().max(200, "That name is too long.").optional(),
+  nextOfKinPhone: z.union([z.literal(""), phoneSchema]).optional(),
+  nextOfKinRelationship: z.string().trim().max(80, "That relationship is too long.").optional(),
+  nextOfKinAddress: z.string().trim().max(500, "That address is too long.").optional(),
+};
+
 const emailSchema = z
   .string()
   .trim()
@@ -64,6 +71,7 @@ const emailSchema = z
 const registrationFields = {
   titleId: z.string().trim().min(1, "Please select a title."),
   ...memberNameFields,
+  ...nextOfKinFields,
   gender: z.enum(GENDERS, { message: "Please select your gender." }),
   ageCategory: z.enum(AGE_CATEGORIES, { message: "Please select an age category." }),
   birthDay: z

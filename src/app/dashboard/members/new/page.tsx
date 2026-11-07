@@ -57,8 +57,7 @@ export default async function NewMemberPage() {
           Register a member
         </h1>
         <p className="mt-1 text-muted-foreground">
-          Add a member to the register on behalf of the church. A membership
-          reference number is generated automatically.
+          Add a member to the membership directory.
         </p>
       </div>
 

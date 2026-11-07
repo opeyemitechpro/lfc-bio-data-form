@@ -59,6 +59,10 @@ The core register. One row per person.
 | `email` | text | As typed |
 | `email_normalized` | text | Lower-cased — used for matching |
 | `residential_address` | text | |
+| `next_of_kin_full_name` | text | Optional, up to 200 characters |
+| `next_of_kin_phone` | text | Optional, up to 30 characters |
+| `next_of_kin_relationship` | text | Optional, up to 80 characters |
+| `next_of_kin_address` | text | Optional current address, up to 500 characters |
 | `membership_duration` | text | `lt_1y` \| `y1_3` \| `y4_6` \| `y7_10` \| `gt_10y` |
 | `suggestions` | text | Free text from the member |
 | `photo_public_id` | text | Cloudinary public ID or `supabase:<bucket>/<path>` storage reference, not a URL |

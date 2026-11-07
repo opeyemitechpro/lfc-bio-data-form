@@ -1,4 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { registerMember } from "@/lib/members/register";
+
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+vi.mock("@/lib/supabase/clients", () => ({ createAdminSupabaseClient: async () => ({ rpc }) }));
 
 import {
   adminMemberSchema,
@@ -38,6 +42,26 @@ describe("registrationSchema", () => {
   it("accepts a complete, valid submission", () => {
     const result = registrationSchema.safeParse(validPayload);
     expect(result.success).toBe(true);
+  });
+
+  it("accepts blank and partially supplied next-of-kin details", () => {
+    expect(registrationSchema.safeParse({
+      ...validPayload, nextOfKinFullName: "", nextOfKinPhone: "", nextOfKinRelationship: "", nextOfKinAddress: "",
+    }).success).toBe(true);
+    expect(registrationSchema.safeParse({ ...validPayload, nextOfKinFullName: "Mary Okafor" }).success).toBe(true);
+  });
+
+  it("validates a next-of-kin phone only when supplied", () => {
+    expect(registrationSchema.safeParse({ ...validPayload, nextOfKinPhone: "+2348023456789" }).success).toBe(true);
+    const result = registrationSchema.safeParse({ ...validPayload, nextOfKinPhone: "123" });
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error.issues.some((issue) => issue.path.includes("nextOfKinPhone"))).toBe(true);
+  });
+
+  it.each([
+    ["nextOfKinFullName", 200], ["nextOfKinRelationship", 80], ["nextOfKinAddress", 500],
+  ])("bounds the optional %s field", (field, limit) => {
+    expect(registrationSchema.safeParse({ ...validPayload, [field]: "a".repeat(Number(limit) + 1) }).success).toBe(false);
   });
 
   it("requires the consent acknowledgement", () => {
@@ -227,5 +251,27 @@ describe("adminMemberSchema", () => {
     );
 
     expect(adminMemberSchema.safeParse(adminPayload).success).toBe(true);
+  });
+});
+
+describe("next-of-kin registration persistence", () => {
+  it.each([false, true])("forwards optional details to the transactional RPC (populated: %s)", async (populated) => {
+    rpc.mockResolvedValue({ data: [{ member_id: "member-1", reference_no: "LFC-1", duplicate_flagged: false }], error: null });
+    const input = {
+      ...validPayload,
+      photoPublicId: null, photoFormat: null, photoWidth: null, photoHeight: null, photoBytes: null,
+      consent: { noticeVersion: "1", isChildRegistration: false, guardianName: null, guardianRelationship: null, guardianPhone: null },
+      nextOfKinFullName: populated ? " Mary Okafor " : "",
+      nextOfKinPhone: populated ? " +2348023456789 " : "",
+      nextOfKinRelationship: populated ? " Sister " : "",
+      nextOfKinAddress: populated ? " 10 Church Street " : "",
+    };
+    await registerMember(input);
+    expect(rpc).toHaveBeenLastCalledWith("create_member_registration_named", { p_registration: expect.objectContaining({
+      p_next_of_kin_full_name: populated ? "Mary Okafor" : null,
+      p_next_of_kin_phone: populated ? "+2348023456789" : null,
+      p_next_of_kin_relationship: populated ? "Sister" : null,
+      p_next_of_kin_address: populated ? "10 Church Street" : null,
+    }) });
   });
 });

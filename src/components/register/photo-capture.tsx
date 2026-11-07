@@ -189,7 +189,7 @@ export function PhotoCapture({
             <p className="text-base font-semibold">Passport photograph</p>
             <p className="text-sm text-muted-foreground">
               Take a clear photo with a plain background, or choose an existing
-              image. JPEG, PNG or WebP, up to {formatBytes(maxBytes)}.
+              image from your device. JPEG, PNG or WebP, max size {formatBytes(maxBytes)}.
             </p>
           </div>
 

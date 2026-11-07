@@ -139,6 +139,10 @@ export function RegistrationForm({
       additionalPhones: [],
       email: "",
       residentialAddress: "",
+      nextOfKinFullName: "",
+      nextOfKinPhone: "",
+      nextOfKinRelationship: "",
+      nextOfKinAddress: "",
       membershipDuration: "lt_1y",
       suggestions: "",
       photo: null,
@@ -265,7 +269,7 @@ export function RegistrationForm({
           </div>
           <CardTitle className="mt-3 text-2xl">Registration received</CardTitle>
           <CardDescription className="text-base">
-            Thank you for registering with Living Faith Church International,
+            Thank you for registering with Living Faith Church,
             Laderin-Hilltop.
           </CardDescription>
         </CardHeader>
@@ -274,24 +278,24 @@ export function RegistrationForm({
           {referenceNo ? (
             <div className="rounded-lg border-2 border-border bg-muted/50 p-5 text-center">
               <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Your membership reference number
+                Reference number
               </p>
               <p className="mt-1 font-mono text-2xl font-bold tracking-wider text-foreground">
                 {referenceNo}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Please keep this number safe. The church office may ask for it.
+                This number is simply for church office records.
               </p>
             </div>
           ) : null}
-          <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+          {/* <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
             <p className="font-semibold text-foreground">What happens next?</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Your details have been saved in the church membership register.</li>
+              <li>Your details have been saved.</li>
               <li>If a matching record already exists, our administrators will review both records.</li>
               <li>Contact the church office to correct any detail or to request a membership card.</li>
             </ul>
-          </div>
+          </div> */}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               type="button"
@@ -340,6 +344,10 @@ export function RegistrationForm({
               ...(formSettings.allowAdditionalPhones ? [["Additional phone numbers", reviewValues.additionalPhones?.join(", ")]] : []),
               ["Email address", reviewValues.email],
               ["Residential address", reviewValues.residentialAddress],
+              ["Next-of-kin full name", reviewValues.nextOfKinFullName],
+              ["Next-of-kin phone number", reviewValues.nextOfKinPhone],
+              ["Next-of-kin relationship", reviewValues.nextOfKinRelationship],
+              ["Next-of-kin current address", reviewValues.nextOfKinAddress],
               ["Membership duration", MEMBERSHIP_DURATION_LABELS[reviewValues.membershipDuration]],
               ["Service units", serviceUnits.filter((unit) => reviewValues.serviceUnitIds?.includes(unit.id)).map((unit) => unit.name).join(", ") || "No service units"],
               ...(formSettings.allowSuggestions ? [["Suggestions or observations", reviewValues.suggestions]] : []),
@@ -353,8 +361,6 @@ export function RegistrationForm({
                 const value = reviewValues.customValues?.[field.field_key];
                 return [field.label, typeof value === "boolean" ? (value ? "Yes" : "No") : Array.isArray(value) ? value.join(", ") : String(value ?? "")];
               }),
-              ["Privacy consent", reviewValues.consentAccepted ? "Accepted" : "Not accepted"],
-              ["Privacy notice version", privacyNotice.version],
             ].map(([label, value]) => (
               <div key={label} className="min-w-0 border-b border-border pb-3">
                 <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
@@ -393,7 +399,7 @@ export function RegistrationForm({
             Personal information
           </CardTitle>
           <CardDescription>
-            Please provide your details as they appear on your official documents.
+            Please provide your details as accurately as possible.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -402,7 +408,7 @@ export function RegistrationForm({
             label="Title"
             required
             error={errorFor("titleId")}
-            helpText="Choose the title you use in the church."
+            helpText="Choose your title."
           >
             <Controller
               control={control}
@@ -467,7 +473,6 @@ export function RegistrationForm({
               label="Age category"
               required
               error={errorFor("ageCategory")}
-              helpText="Select the range that matches your age today."
             >
               <Controller
                 control={control}
@@ -720,9 +725,28 @@ export function RegistrationForm({
         </CardContent>
       </Card>
 
-      {/* ---------------------------------------------------------- */}
-      {/* Church membership                                            */}
-      {/* ---------------------------------------------------------- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Next of kin</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FormField id="nextOfKinFullName" label="Next-of-kin full name" optional error={errorFor("nextOfKinFullName")}>
+              <Input id="nextOfKinFullName" autoComplete="off" {...register("nextOfKinFullName")} aria-invalid={Boolean(errorFor("nextOfKinFullName")) || undefined} />
+            </FormField>
+            <FormField id="nextOfKinPhone" label="Next-of-kin phone number" optional error={errorFor("nextOfKinPhone")}>
+              <Input id="nextOfKinPhone" type="tel" inputMode="tel" autoComplete="off" {...register("nextOfKinPhone")} aria-invalid={Boolean(errorFor("nextOfKinPhone")) || undefined} />
+            </FormField>
+          </div>
+          <FormField id="nextOfKinRelationship" label="Next-of-kin relationship" optional error={errorFor("nextOfKinRelationship")}>
+            <Input id="nextOfKinRelationship" autoComplete="off" {...register("nextOfKinRelationship")} aria-invalid={Boolean(errorFor("nextOfKinRelationship")) || undefined} />
+          </FormField>
+          <FormField id="nextOfKinAddress" label="Next-of-kin current address" optional error={errorFor("nextOfKinAddress")}>
+            <Textarea id="nextOfKinAddress" autoComplete="off" {...register("nextOfKinAddress")} aria-invalid={Boolean(errorFor("nextOfKinAddress")) || undefined} />
+          </FormField>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Church membership</CardTitle>
@@ -762,11 +786,11 @@ export function RegistrationForm({
 
           <fieldset>
             <legend className="text-sm font-semibold">
-              Service units{" "}
+              Service units, Groups, etc{" "}
               <span className="font-normal text-muted-foreground">(select all that apply)</span>
             </legend>
             <p className="mb-3 mt-1 text-sm text-muted-foreground">
-              Choose the departments or units you serve in.
+              Choose the departments or units where you currently serve in the church.
             </p>
             <div className="grid gap-2.5 sm:grid-cols-2">
               {serviceUnits.map((unit) => {
@@ -974,56 +998,7 @@ export function RegistrationForm({
         </Card>
       ) : null}
 
-      {/* ---------------------------------------------------------- */}
-      {/* Privacy notice and consent                                    */}
-      {/* ---------------------------------------------------------- */}
-      <Card className="border-2 border-border">
-        <CardHeader>
-          <CardTitle className="text-xl">Privacy notice and consent</CardTitle>
-          <CardDescription>
-            Please read this before submitting your registration.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed text-muted-foreground">
-            <p className="font-semibold text-foreground">
-              {privacyNotice.organisation}
-            </p>
-            <p className="mt-2">
-              We collect your name, title, gender, age category, day and month of
-              birth, phone numbers, email address, residential address, church
-              membership details and passport photograph for the purpose of
-              keeping the church membership register, issuing membership cards
-              and contacting members about church activities.
-            </p>
-            <p className="mt-2">
-              Your photograph is stored securely and is only accessible to
-              authorised church administrators. Information is retained for
-              approximately {privacyNotice.retentionYears} years for membership
-              records.
-            </p>
-            <p className="mt-2">
-              This application is hosted on {privacyNotice.thirdParties.join(", ")}.
-              Please contact us to request access to, correction of, or deletion
-              of your information.
-            </p>
-            <p className="mt-3">
-              Contact:{" "}
-              <a
-                href={`mailto:${privacyNotice.contactEmail}`}
-                className="font-semibold text-primary underline underline-offset-2"
-              >
-                {privacyNotice.contactEmail}
-              </a>{" "}
-              {privacyNotice.contactPhone ? ` · ${privacyNotice.contactPhone}` : ""}
-            </p>
-            <p className="mt-2 text-xs">
-              Notice version {privacyNotice.version}. This notice supports, but
-              does not replace, the church&apos;s obligations under the Nigeria
-              Data Protection Act 2023.
-            </p>
-          </div>
-
+      <div className="space-y-4">
           <div className="flex items-start gap-3 rounded-lg border-2 border-border p-4">
             <Controller
               control={control}
@@ -1037,9 +1012,9 @@ export function RegistrationForm({
               )}
             />
             <Label htmlFor="consentAccepted" className="cursor-pointer text-base leading-relaxed">
-              I have read the privacy notice, and I consent to {privacyNotice.organisation}
+              I have read the privacy notice, and I consent to {privacyNotice.organisation}{" "}
               collecting, storing and processing my personal information and
-              photograph for church membership documentation.
+              photograph for church  documentation.
             </Label>
           </div>
           {errorFor("consentAccepted") ? (
@@ -1057,12 +1032,8 @@ export function RegistrationForm({
               </p>
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+      </div>
 
-      {/* ---------------------------------------------------------- */}
-      {/* Submit                                                        */}
-      {/* ---------------------------------------------------------- */}
       <div className="border-t border-border py-4">
         <Button
           type="submit"

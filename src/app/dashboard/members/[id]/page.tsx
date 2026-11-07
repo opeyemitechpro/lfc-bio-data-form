@@ -240,6 +240,26 @@ export default async function MemberProfilePage({ params }: PageProps) {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Next of kin</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              {[
+                ["Full name", member.next_of_kin_full_name],
+                ["Phone number", member.next_of_kin_phone],
+                ["Relationship", member.next_of_kin_relationship],
+                ["Current address", member.next_of_kin_address],
+              ].map(([label, value]) => (
+                <div key={label} className="min-w-0">
+                  <dt className="text-sm font-semibold text-muted-foreground">{label}</dt>
+                  <dd className="whitespace-pre-wrap wrap-break-word">{value || "Not provided"}</dd>
+                </div>
+              ))}
+            </dl>
+          </CardContent>
+        </Card>
         {/* Church membership */}
         <Card>
           <CardHeader>
